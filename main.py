@@ -7,6 +7,8 @@ import io
 import os
 from dotenv import load_dotenv
 import re
+from sheets_utils import set_month, append_row
+import gspread
 
 load_dotenv()  # busca un .env en la carpeta
 TOKEN = os.environ.get("TOKEN")
@@ -24,6 +26,10 @@ if os.name == 'nt' and "TESSDATA_PREFIX" not in os.environ:
         # lanza error de todos modos si esto está mal
         pass
 
+
+# conexión con la hoja
+gc = gspread.service_account(filename="credentials.json")
+sh = gc.open("Gastos")
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -53,8 +59,21 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data["fecha"] = fecha
     context.user_data["tipo"] = consumo
 
+# handler para /mes
+async def cambiar_mes(update, context):
+    if not context.args:
+        await update.message.reply_text("Usá: /mes <NombreDelMes> (ej: /mes Noviembre)")
+        return
+    nuevo = context.args[0]
+    set_month(nuevo)
+    await update.message.reply_text(f"📁 Hoja activa: {nuevo.capitalize()}")
+
+# al aceptar el ticket:
+append_row([fecha, tipo, total])
+
 app = Application.builder().token(TOKEN).build()
 app.add_handler(CommandHandler("start", start))
+app.add_handler(CommandHandler("mes", cambiar_mes))
 app.add_handler(MessageHandler(filters.PHOTO, handle_photo))
 
 app.run_polling()
