@@ -42,7 +42,7 @@ TesseractError: Error opening data file ... Please make sure the TESSDATA_PREFIX
 ```
 Solución rápida temporal (PowerShell):
 ```powershell
-$env:TESSDATA_PREFIX = 'C:\Program Files\Tesseract-OCR\'
+$env:TESSDATA_PREFIX = 'C:\Program Files\Tesseract-OCR\tessdata\\'
 ```
 Para fijarlo permanentemente, añade la variable en las Variables de entorno del sistema.
 
