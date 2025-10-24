@@ -7,13 +7,13 @@ import io
 import os
 from dotenv import load_dotenv
 import re
-from sheets_utils import set_month, append_row
+from sheet_utils import set_month, append_row
 import gspread
 
 load_dotenv()  # busca un .env en la carpeta
 TOKEN = os.environ.get("TOKEN")
 
-#TODO ESTO VA PARA VAR DE ENTORNO
+#TODO ESTO VA PARA VAR DE ENTORNO {
 # no tengo tesseract en el path, de lo contrario comentar esta línea
 pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
 
@@ -25,7 +25,7 @@ if os.name == 'nt' and "TESSDATA_PREFIX" not in os.environ:
     else:
         # lanza error de todos modos si esto está mal
         pass
-
+#}
 
 # conexión con la hoja
 gc = gspread.service_account(filename="credentials.json")
@@ -48,32 +48,80 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     fecha = re.search(r"\b(\d{1,2}/\d{1,2}/\d{2,4})\b", text)
     fecha = fecha.group(1) if fecha else "No detectada"
 
-    # --- Buscar la línea 'CONSUMO FINAL' (ignora mayúsculas/minúsculas)
-    consumo = re.search(r"(consumo\s*final)", text, re.IGNORECASE)
-    consumo = consumo.group(1).upper() if consumo else "No encontrado"
+    # --- Buscar productos después de "MONEDA: UYU" hasta el total
+    patron_productos = r"MONEDA: UYU\s*(.*?)\s*(?:TOT|TOTAL)"
+    productos_match = re.search(patron_productos, text, re.DOTALL | re.IGNORECASE)
 
-    resultado = f"🧾 Datos detectados:\n\nFecha: {fecha}\nTipo: {consumo}"
+    if productos_match:
+        # Limpiar y formatear el texto de productos
+        productos_texto = productos_match.group(1).strip()
+        productos_texto = re.sub(r'/\s*0\s*\.\s*\d*\.?\d+', '', productos_texto)
+        
+        # Después de limpiar productos_texto, agregar este código:
+        # Procesar productos individualmente
+        lineas = productos_texto.split('\n')
+        productos_detallados = []
+        i = 0
 
+        while i < len(lineas):
+            linea = lineas[i].strip()
+            
+            # Si la línea termina con ":" es un nombre de producto
+            if linea.endswith(':'):
+                nombre_producto = linea[:-1].strip()  # Eliminar los dos puntos
+                
+                # Buscar la siguiente línea que contiene cantidad y precio
+                if i + 1 < len(lineas):
+                    siguiente_linea = lineas[i + 1].strip()
+                    
+                    # Buscar el patrón: cantidad UN X precio
+                    match = re.search(r'(\d+\.?\d*)\s*UN\s*X\s*(\d+\.?\d*)', siguiente_linea)
+                    if match:
+                        cantidad = match.group(1)
+                        precio = match.group(2)
+                        
+                        productos_detallados.append({
+                            'nombre': nombre_producto,
+                            'cantidad': cantidad,
+                            'precio': precio
+                        })
+                        
+                        # Saltar a la siguiente línea después de procesar este producto
+                        i += 2
+                        continue
+            
+            i += 1
+
+        # Formatear el resultado para mostrar
+        if productos_detallados:
+            productos_formateados = ""
+            for producto in productos_detallados:
+                productos_formateados += f"{producto['nombre']}: {producto['cantidad']} UN X {producto['precio']}\n"
+        else:
+            productos_formateados = "No se detectaron productos"
+
+    resultado = f"🧾 Datos detectados:\n\nFecha: {fecha}\n Productos:\n{productos_formateados}"
+    await update.message.reply_text(resultado)
+    
     # Guardamos para uso posterior
     context.user_data["last_text"] = text
     context.user_data["fecha"] = fecha
-    context.user_data["tipo"] = consumo
 
 # handler para /mes
-async def cambiar_mes(update, context):
-    if not context.args:
-        await update.message.reply_text("Usá: /mes <NombreDelMes> (ej: /mes Noviembre)")
-        return
-    nuevo = context.args[0]
-    set_month(nuevo)
-    await update.message.reply_text(f"📁 Hoja activa: {nuevo.capitalize()}")
+#async def cambiar_mes(update, context):
+ #   if not context.args:
+  #      await update.message.reply_text("Usá: /mes <NombreDelMes> (ej: /mes Noviembre)")
+   #     return
+    #nuevo = context.args[0]
+    #set_month(nuevo)
+    #await update.message.reply_text(f"📁 Hoja activa: {nuevo.capitalize()}")
 
 # al aceptar el ticket:
-append_row([fecha, tipo, total])
+#append_row([fecha, tipo, total])
 
 app = Application.builder().token(TOKEN).build()
 app.add_handler(CommandHandler("start", start))
-app.add_handler(CommandHandler("mes", cambiar_mes))
+#app.add_handler(CommandHandler("mes", cambiar_mes))
 app.add_handler(MessageHandler(filters.PHOTO, handle_photo))
 
 app.run_polling()
