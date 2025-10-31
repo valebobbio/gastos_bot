@@ -26,13 +26,14 @@ COLUMNAS = ["Producto",
 
 # Nombre del archivo en Drive
 sh = gc.open("Gastos")  
+# Valor por defecto
 _active_month = "Octubre"
 
 def set_month(month_name):
     global _active_month
     _active_month = month_name.capitalize()
 
-def get_column_letter(column_name):
+def get_column_letter(column_name): # Genialidad que solo se le ocurre a chadGPT
     """
     Obtiene la letra de la columna basada en su nombre en los encabezados
     """
@@ -64,7 +65,7 @@ def create_new_month(month_name,monto_inicial):
             new_worksheet = sh.add_worksheet(
             title=month_name, 
             rows="1000", 
-            cols=str(len(COLUMNAS))
+            cols="1000",
             )
         
             # Agrego los encabezados pre-seteados
@@ -197,7 +198,3 @@ def create_new_month(month_name,monto_inicial):
         except Exception as e:
             print(f"❌ Error creando hoja '{month_name}': {e}")
             return False
-
-def append_row(values):
-    ws = sh.worksheet(_active_month)
-    ws.append_row(values)
