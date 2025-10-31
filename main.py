@@ -1,3 +1,4 @@
+# De momento solo reconoce el formato de boleta del Disco
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 import pytesseract
@@ -57,7 +58,6 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
         productos_texto = productos_match.group(1).strip()
         productos_texto = re.sub(r'/\s*0\s*\.\s*\d*\.?\d+', '', productos_texto)
         
-        # Después de limpiar productos_texto, agregar este código:
         # Procesar productos individualmente
         lineas = productos_texto.split('\n')
         productos_detallados = []
@@ -107,14 +107,14 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data["last_text"] = text
     context.user_data["fecha"] = fecha
 
-# handler para /mes
-#async def cambiar_mes(update, context):
- #   if not context.args:
-  #      await update.message.reply_text("Usá: /mes <NombreDelMes> (ej: /mes Noviembre)")
-   #     return
-    #nuevo = context.args[0]
-    #set_month(nuevo)
-    #await update.message.reply_text(f"📁 Hoja activa: {nuevo.capitalize()}")
+#handler para /mes
+async def cambiar_mes(update, context):
+    if not context.args:
+        await update.message.reply_text("Usá: /mes <NombreDelMes> (ej: /mes Noviembre)")
+        return
+    nuevo = context.args[0]
+    set_month(nuevo)
+    await update.message.reply_text(f"📁 Hoja activa: {nuevo.capitalize()}")
 
 # al aceptar el ticket:
 #append_row([fecha, tipo, total])
