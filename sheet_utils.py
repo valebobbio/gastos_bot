@@ -29,6 +29,7 @@ sh = gc.open("Gastos")
 # Valor por defecto
 _active_month = "Octubre"
 
+# Por ahora no la uso
 def set_month(month_name):
     global _active_month
     _active_month = month_name.capitalize()
@@ -62,18 +63,18 @@ def create_new_month(month_name,monto_inicial):
     except gspread.exceptions.WorksheetNotFound:
         try:
             # Nueva hoja
-            new_worksheet = sh.add_worksheet(
+            ws = sh.add_worksheet(
             title=month_name, 
             rows="1000", 
             cols="1000",
             )
         
             # Agrego los encabezados pre-seteados
-            new_worksheet.append_row(COLUMNAS)
+            ws.append_row(COLUMNAS)
             
             # Primera fila en negrita
             #try:
-            new_worksheet.format('A1:Z1', {'textFormat': {'bold': True}})
+            ws.format('A1:Z1', {'textFormat': {'bold': True}})
             #except:
             #   pass  # No pasa nada si falla
 
@@ -82,7 +83,6 @@ def create_new_month(month_name,monto_inicial):
             # -----------Agrego los cálculos de atributos (hardcodeado porque tienen cosas diferentes)-----------------
             #----------------------------------------------------------------------------------------------------------
             #----------------------------------------------------------------------------------------------------------
-            ws = sh.worksheet(month_name) # Obtener la hoja
 
 
             #------------------
