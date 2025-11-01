@@ -1,4 +1,4 @@
-# De momento solo reconoce el formato de boleta del Disco
+# De momento solo reconoce el formato de boleta del Disco y pretendo permitir ingreso manual
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 import pytesseract
@@ -8,10 +8,11 @@ import io
 import os
 from dotenv import load_dotenv
 import re
-from sheet_utils import set_month, append_row
+from sheet_utils import create_new_month#, append_row
 import gspread
 
-load_dotenv()  # busca un .env en la carpeta
+load_dotenv()  # Busca un .env en la carpeta
+# Token del bot de telegram
 TOKEN = os.environ.get("TOKEN")
 
 #TODO ESTO VA PARA VAR DE ENTORNO {
@@ -110,18 +111,30 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
 #handler para /mes
 async def cambiar_mes(update, context):
     if not context.args:
-        await update.message.reply_text("Usá: /mes <NombreDelMes> (ej: /mes Noviembre)")
+        await update.message.reply_text("Usá: /mes <NombreDelMes> <Importe Inicial (opcional)> (ej: /mes Noviembre 20000)")
         return
-    nuevo = context.args[0]
-    set_month(nuevo)
-    await update.message.reply_text(f"📁 Hoja activa: {nuevo.capitalize()}")
+    
+    mes = context.args[0].capitalize()
+    
+    # Verificar si se proporcionó un importe
+    if len(context.args) > 1:
+        try:
+            importe = float(context.args[1])
+        except ValueError:
+            await update.message.reply_text("❌ El importe debe ser un número válido")
+            return
+    else:
+        importe = 13000  
+    
+    create_new_month(mes, importe)
+    await update.message.reply_text(f"📁 Hoja activa: {mes}")
 
 # al aceptar el ticket:
 #append_row([fecha, tipo, total])
 
 app = Application.builder().token(TOKEN).build()
 app.add_handler(CommandHandler("start", start))
-#app.add_handler(CommandHandler("mes", cambiar_mes))
+app.add_handler(CommandHandler("mes", cambiar_mes))
 app.add_handler(MessageHandler(filters.PHOTO, handle_photo))
 
 app.run_polling()
