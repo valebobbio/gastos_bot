@@ -12,6 +12,7 @@ COLUMNAS = ["Producto",
             "Establecimiento",
             "Fecha",
             "Sofi-yo",
+            #"Cant (UN|KG)"
             "Precio total ($)",
             "Precio total (U$S)",
             "Total sofi-yo",

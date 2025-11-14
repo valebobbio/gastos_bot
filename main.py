@@ -1,4 +1,6 @@
 # De momento solo reconoce el formato de boleta del Disco y pretendo permitir ingreso manual
+# correr con: .\.venv\Scripts\activate
+#             python main.py
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 import pytesseract
@@ -43,7 +45,7 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     file_bytes = requests.get(file.file_path).content
     image = Image.open(io.BytesIO(file_bytes))
 
-    #leo texto
+    # Leo texto
     text = pytesseract.image_to_string(image, lang='spa')
 
     # --- Buscar la FECHA (formato DD/MM/AAAA)
@@ -66,17 +68,21 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         while i < len(lineas):
             linea = lineas[i].strip()
+
+            if not linea:
+                i += 1
+                continue
             
-            # Si la línea termina con ":" es un nombre de producto
-            if linea.endswith(':'):
-                nombre_producto = linea[:-1].strip()  # Eliminar los dos puntos
+            # Si la línea termina con ":" o con una letra es un nombre de producto
+            if linea[-1].isalpha():
+                nombre_producto = linea[:-1]
                 
                 # Buscar la siguiente línea que contiene cantidad y precio
                 if i + 1 < len(lineas):
                     siguiente_linea = lineas[i + 1].strip()
                     
                     # Buscar el patrón: cantidad UN X precio
-                    match = re.search(r'(\d+\.?\d*)\s*UN\s*X\s*(\d+\.?\d*)', siguiente_linea)
+                    match = re.search(r'(\d+\.?\d*)\s*(?:UN|KG)\s*X\s*(\d+\.?\d*)', siguiente_linea)
                     if match:
                         cantidad = match.group(1)
                         precio = match.group(2)
@@ -97,15 +103,16 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if productos_detallados:
             productos_formateados = ""
             for producto in productos_detallados:
-                productos_formateados += f"{producto['nombre']}: {producto['cantidad']} UN X {producto['precio']}\n"
+                productos_formateados += f"{producto['nombre']}: {producto['cantidad']} UN/KG X {producto['precio']}\n"
         else:
             productos_formateados = "No se detectaron productos"
 
     resultado = f"🧾 Datos detectados:\n\nFecha: {fecha}\n Productos:\n{productos_formateados}"
-    await update.message.reply_text(resultado)
+    await update.message.reply_text(resultado+"\n"+text)
     
     # Guardamos para uso posterior
     context.user_data["last_text"] = text
+    context.user_data["productos"] = productos_formateados
     context.user_data["fecha"] = fecha
 
 #handler para /mes
@@ -127,7 +134,13 @@ async def cambiar_mes(update, context):
         importe = 13000  
     
     create_new_month(mes, importe)
-    await update.message.reply_text(f"📁 Hoja activa: {mes}")
+    await update.message.reply_text(f"📁 Hoja activa: {mes}") # Tal vez luego especifique si se creó o solo se cambió a la existente
+
+async def edit(update, context):
+    if not context.args:
+        await update.message.reply_text("Usá: /mes <NombreDelMes> <Importe Inicial (opcional)> (ej: /mes Noviembre 20000)")
+        return
+
 
 # al aceptar el ticket:
 #append_row([fecha, tipo, total])
@@ -136,5 +149,6 @@ app = Application.builder().token(TOKEN).build()
 app.add_handler(CommandHandler("start", start))
 app.add_handler(CommandHandler("mes", cambiar_mes))
 app.add_handler(MessageHandler(filters.PHOTO, handle_photo))
+app.add_handler(CommandHandler("edit", edit))
 
 app.run_polling()
