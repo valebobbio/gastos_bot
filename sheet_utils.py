@@ -202,3 +202,6 @@ def create_new_month(month_name,monto_inicial):
         except Exception as e:
             print(f"❌ Error creando hoja '{month_name}': {e}")
             return False
+
+def append_row():
+    exit 

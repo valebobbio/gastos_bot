@@ -118,7 +118,41 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
 #handler para ingreso manual de datos
 async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     texto = update.message.text
-    await update.message.reply_text(f"Recibí tu texto: {texto}")
+    lineas = texto.split('\n')
+    
+    productos_detallados = []
+
+    for linea in lineas:
+        linea = linea.strip()
+        if not linea: 
+            continue
+
+        atributos = linea.split(';')
+        
+        # Limpiar cada atributo de espacios y verificar que haya al menos 4 atributos
+        atributos = [attr.strip() for attr in atributos]
+        
+        if len(atributos) >= 4:
+            productos_detallados.append({
+                'nombre': atributos[0],
+                'precio': atributos[1],
+                'fecha': atributos[2],
+                'quien': atributos[3],
+            })
+
+    # Construir el mensaje de respuesta
+    if productos_detallados:
+        # Formatear cada producto en una línea separada
+        mensaje = ""
+        it = 1
+        for producto in productos_detallados:
+            mensaje += f"{it}) {producto['nombre']} {producto['precio']} {producto['fecha']} {producto['quien']}\n"
+            it+=1
+        
+        await update.message.reply_text(mensaje.strip())
+    else:
+        await update.message.reply_text("No se detectaron productos válidos en el texto.")
+
 
 #handler para /mes
 async def cambiar_mes(update, context):
@@ -141,6 +175,18 @@ async def cambiar_mes(update, context):
     create_new_month(mes, importe)
     await update.message.reply_text(f"📁 Hoja activa: {mes}") # Tal vez luego especifique si se creó o solo se cambió a la existente
 
+# handler para /help
+async def ayuda(update, context):
+    await update.message.reply_text("Formatos de entrada: \n" \
+    "/mes <NombreDelMes> <Importe Inicial (opt)>\n" \
+    "/edit --sin definir--\n" \
+    "Ingreso de datos por mensaje: <nombreDelProducto; precio; fecha; comprador a destinatario/s>\n" \
+    "---Si alguno de los datos queda vacío, se deben igualmente respetar los ; separadores\n" \
+    # Idea intuitiva de lo de abajo: comprador C y destinatario D, D es el dueño de la cuenta
+    # C compra algo para D, ahora D le debe el costo del producto a C, se escribe "C a D"
+    # C compra algo para D y C, ahora D le debe la mitad del costo del producto a C, se escribe "C a D y C"
+    "---Formato comp a dest: <nombre_comprador a nombre_destinatario1> <y nombre_destinatario2 (opcional si es igual a nombre_comprador)>")
+
 async def edit(update, context):
     if not context.args:
         await update.message.reply_text("Usá: /mes <NombreDelMes> <Importe Inicial (opcional)> (ej: /mes Noviembre 20000)")
@@ -153,6 +199,7 @@ async def edit(update, context):
 app = Application.builder().token(TOKEN).build()
 app.add_handler(CommandHandler("start", start))
 app.add_handler(CommandHandler("mes", cambiar_mes))
+app.add_handler(CommandHandler("help", ayuda))
 app.add_handler(MessageHandler(filters.PHOTO, handle_photo))
 app.add_handler(MessageHandler(filters.TEXT, handle_text))
 app.add_handler(CommandHandler("edit", edit))
