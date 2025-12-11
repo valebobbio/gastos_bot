@@ -1,4 +1,4 @@
-# De momento solo reconoce el formato de boleta del Disco y pretendo permitir ingreso manual
+# De momento solo reconoce el formato de boleta del Disco (y otras cadenas grandes como Kinko) y pretendo permitir ingreso manual
 # correr con: .\.venv\Scripts\activate
 #             python main.py
 from telegram import Update
@@ -115,6 +115,11 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data["productos"] = productos_formateados
     context.user_data["fecha"] = fecha
 
+#handler para ingreso manual de datos
+async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    texto = update.message.text
+    await update.message.reply_text(f"Recibí tu texto: {texto}")
+
 #handler para /mes
 async def cambiar_mes(update, context):
     if not context.args:
@@ -149,6 +154,7 @@ app = Application.builder().token(TOKEN).build()
 app.add_handler(CommandHandler("start", start))
 app.add_handler(CommandHandler("mes", cambiar_mes))
 app.add_handler(MessageHandler(filters.PHOTO, handle_photo))
+app.add_handler(MessageHandler(filters.TEXT, handle_text))
 app.add_handler(CommandHandler("edit", edit))
 
 app.run_polling()
