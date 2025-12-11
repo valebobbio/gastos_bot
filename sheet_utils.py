@@ -203,5 +203,24 @@ def create_new_month(month_name,monto_inicial):
             print(f"❌ Error creando hoja '{month_name}': {e}")
             return False
 
-def append_row():
-    exit 
+# Recibo los productos en filas formato: nombre precio fecha comp-dest
+def append_row(productos_en_filas):
+    """
+    Agrega una fila con valores en columnas específicas según nombre.
+    Lanza excepciones con mensajes descriptivos en caso de error.
+    """
+    try:
+        ws = sh.worksheet(_active_month)
+
+
+
+        ws.append_row(new_row)
+        
+        return True, "Fila agregada exitosamente"
+        
+    except gspread.exceptions.APIError as e:
+        # Captura errores de la API de Google Sheets
+        raise Exception(f"Error de API de Google Sheets: {e}")
+    except Exception as e:
+        # Captura cualquier otro error y lo relanza
+        raise Exception(f"Error al agregar fila: {e}")

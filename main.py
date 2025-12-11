@@ -10,7 +10,7 @@ import io
 import os
 from dotenv import load_dotenv
 import re
-from sheet_utils import create_new_month#, append_row
+from sheet_utils import create_new_month, append_row
 import gspread
 
 load_dotenv()  # Busca un .env en la carpeta
@@ -35,7 +35,11 @@ if os.name == 'nt' and "TESSDATA_PREFIX" not in os.environ:
 gc = gspread.service_account(filename="credentials.json")
 sh = gc.open("Gastos")
 
+# VARIABLES GLOBALES
+productos_en_fila = "" 
 
+
+# FUNCIONES
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("👋 Mandame una foto de tu ticket para leerla.")
 
@@ -115,9 +119,24 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data["productos"] = productos_formateados
     context.user_data["fecha"] = fecha
 
-#handler para ingreso manual de datos
+# Handler para ingreso manual de datos
 async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     texto = update.message.text
+    
+    if texto.strip().lower() == 'ok':
+        if (productos_en_fila==""): 
+            await update.message.reply_text(f"No hay productos para guardar :/ \nEnvíe /help para obtener información")
+        try:
+            append_row(productos_en_fila) 
+            await update.message.reply_text(f"Productos añadidos con éxito :)") 
+        except Exception as e:
+            error_message = str(e)
+            await update.message.reply_text(f"Error al guardar datos :( \n{error_message}")
+
+        await update.message.reply_text(mensaje)
+
+        return
+    
     lineas = texto.split('\n')
     
     productos_detallados = []
@@ -139,10 +158,11 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 'fecha': atributos[2],
                 'quien': atributos[3],
             })
+        productos_en_fila = productos_detallados
 
-    # Construir el mensaje de respuesta
+    # Mensaje de respuesta
     if productos_detallados:
-        # Formatear cada producto en una línea separada
+        # Formatear cada producto en una línea separada e indexada
         mensaje = ""
         it = 1
         for producto in productos_detallados:
@@ -154,7 +174,7 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("No se detectaron productos válidos en el texto.")
 
 
-#handler para /mes
+# Handler para /mes
 async def cambiar_mes(update, context):
     if not context.args:
         await update.message.reply_text("Usá: /mes <NombreDelMes> <Importe Inicial (opcional)> (ej: /mes Noviembre 20000)")
