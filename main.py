@@ -37,6 +37,7 @@ sh = gc.open("Gastos")
 
 # VARIABLES GLOBALES
 productos_en_fila = "" 
+hay_error_en_datos = []
 
 
 # FUNCIONES
@@ -140,8 +141,9 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     lineas = texto.split('\n')
     
     productos_detallados = []
-
+    nro_linea = 0
     for linea in lineas:
+        nro_linea+=1
         linea = linea.strip()
         if not linea: 
             continue
@@ -152,12 +154,27 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         atributos = [attr.strip() for attr in atributos]
         
         if len(atributos) >= 4:
+            # Extraer primera y última palabra de atributos[3]
+            palabras = atributos[3].split(".")
+            comprador = palabras[0]
+            destinatario = palabras[1].split()
+            
+            if len(palabras) <= 2:
+                quien = f"{palabras[0]} {palabras[-1]}"
+            elif len(palabras)>2:
+                quien = 
+            else:
+                quien = atributos[3]
             productos_detallados.append({
                 'nombre': atributos[0],
                 'precio': atributos[1],
                 'fecha': atributos[2],
-                'quien': atributos[3],
+                'comprador': comprador,
+                'destinatario': destinatario
             })
+        else:
+            hay_error_en_datos.append({nro_linea})
+            print(f"Error en los datos del producto {nro_linea}, por favor corrija con /edit")
         productos_en_fila = productos_detallados
 
     # Mensaje de respuesta
@@ -168,7 +185,11 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         for producto in productos_detallados:
             mensaje += f"{it}) {producto['nombre']} {producto['precio']} {producto['fecha']} {producto['quien']}\n"
             it+=1
-        
+        if hay_error_en_datos:
+            mensaje += f"Faltan datos en las líneas: "
+            for nro in hay_error_en_datos:
+                mensaje += nro
+            mensaje += f"\nCorrija con /edit, el error puede deberse a falta de datos o falta de separadores ';' "
         await update.message.reply_text(mensaje.strip())
     else:
         await update.message.reply_text("No se detectaron productos válidos en el texto.")

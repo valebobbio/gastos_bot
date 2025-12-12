@@ -205,13 +205,64 @@ def create_new_month(month_name,monto_inicial):
 
 # Recibo los productos en filas formato: nombre precio fecha comp-dest
 def append_row(productos_en_filas):
-    """
-    Agrega una fila con valores en columnas específicas según nombre.
-    Lanza excepciones con mensajes descriptivos en caso de error.
-    """
     try:
         ws = sh.worksheet(_active_month)
 
+        producto_cell = ws.find("Producto")
+        fecha_cell = ws.find("Fecha")
+        precio_cell = ws.find("Precio total ($)")
+        comp_dest_cell = ws.find("Sofi-yo")
+
+        # Obtengo primera fila vacía
+        all_values = ws.get_all_values()
+    
+        # Si la hoja está vacía hay algo mal. Igualmente nunca debería pasar
+        if not all_values:
+            raise Exception(f"Error, hoja vacía")
+        
+        # Buscar desde la primera fila
+        for row_num, row in enumerate(all_values, start=3):
+            # Si todas las celdas de la fila están vacías
+            if all(cell == '' for cell in row):
+                return row_num
+        
+        # Si no encuentra ninguna fila vacía, uso la siguiente a la última
+        new_row = len(all_values) + 1
+        
+        lineas = productos_en_filas.split("\n") # Tengo que hacer esto más eficiente porque esta recorrida la hago mil veces
+
+        for linea in lineas:
+            # Hago el cálculo del precio
+
+            # Lógica de comprador-destinatario:
+            # -si el comprador no soy yo y no hay destinatario, asumo que (dest.) soy yo
+            # -si el destinatario no soy yo y no hay comprador, asumo que (comp.) es sofi (o la persona con quien comparta gastos más seguido, la col. <nombre>-yo)
+            # -si no hay ninguno, soy ambos (es decir, no es necesario aclarar cuando compro algo para mí)
+            # -si hay ambos, pero ambos son el mismo: si soy yo se ingresa normal, si es otra persona no se hace nada
+
+            comprador = linea['comprador'].lower()
+            destinatario = linea['comprador'].lower()
+
+            precio = linea['precio']
+            precio_total = 0
+            precio_sofi_yo = 0
+
+            # Obtengo los prefijos para poder comparar. En resumen, alcanza con
+            if "sofia".startswith(comprador) and (destinatario=="" or "valentino".startswith(destinatario)):
+                precio_sofi_yo = precio
+            elif "valentino".startswith(comprador) and (destinatario=="" or "sofia".startswith(destinatario)):
+                precio_sofi_yo = -precio
+            
+
+            #if len(quien.split()==2): 
+            #    if "valentino".startswith(quien[0]) and "sofia".startswith(quien[0]):
+
+
+            # Agrego producto
+            ws.update_cell(new_row, producto_cell.col, linea['nombre'])
+            # Agrego fecha
+            ws.update_cell(new_row, fecha_cell.col, linea['fecha'])
+            # Hago el cálculo de precio
 
 
         ws.append_row(new_row)
