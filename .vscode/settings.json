@@ -3,5 +3,12 @@
   "python.analysis.extraPaths": [
     "${workspaceFolder}"
   ]
-  ,"python.analysis.useLibraryCodeForTypes": true
+  ,
+  "python.analysis.useLibraryCodeForTypes": true,
+  "python-envs.pythonProjects": [],
+  "github.copilot.chat.edits.suggestRelatedFilesForTests": true,
+  "javascript.suggest.includeAutomaticOptionalChainCompletions": true,
+  "typescript.suggest.includeAutomaticOptionalChainCompletions": true,
+  "dotnet.completion.showNameCompletionSuggestions": true,
+  "dotnet.completion.triggerCompletionInArgumentLists": true
 }

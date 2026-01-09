@@ -8,6 +8,7 @@ from PIL import Image
 import requests
 import io
 import os
+import platform
 from dotenv import load_dotenv
 import re
 from sheet_utils import create_new_month, append_row
@@ -19,17 +20,68 @@ TOKEN = os.environ.get("TOKEN")
 
 #TODO ESTO VA PARA VAR DE ENTORNO {
 # no tengo tesseract en el path, de lo contrario comentar esta línea
-pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+#pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
 
 # no tengo TESSDATA_PREFIX en el path, después lo agrego
-if os.name == 'nt' and "TESSDATA_PREFIX" not in os.environ:
-    possible = r"C:\Program Files\Tesseract-OCR\tessdata"
-    if os.path.isdir(possible):
-        os.environ["TESSDATA_PREFIX"] = r"C:\Program Files\Tesseract-OCR\tessdata\\"
-    else:
+#if os.name == 'nt' and "TESSDATA_PREFIX" not in os.environ:
+#    possible = r"C:\Program Files\Tesseract-OCR\tessdata"
+#    if os.path.isdir(possible):
+#        os.environ["TESSDATA_PREFIX"] = r"C:\Program Files\Tesseract-OCR\tessdata\\"
+#    else:
         # lanza error de todos modos si esto está mal
-        pass
+#        pass
 #}
+
+
+# Detectar el sistema operativo para ubicar tesseract
+sistema = platform.system()
+
+if sistema == "Windows":
+    # Configuración para Windows
+    pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+    
+    if "TESSDATA_PREFIX" not in os.environ:
+        possible = r"C:\Program Files\Tesseract-OCR\tessdata"
+        if os.path.isdir(possible):
+            os.environ["TESSDATA_PREFIX"] = possible
+
+elif sistema == "Linux":
+    # Verificar si está instalado
+    try:
+        pytesseract.get_tesseract_version()
+    except pytesseract.TesseractNotFoundError:
+        posibles_rutas = [
+            "/usr/bin/tesseract",
+            "/usr/local/bin/tesseract",
+            "/bin/tesseract"
+        ]
+        for ruta in posibles_rutas:
+            if os.path.isfile(ruta):
+                pytesseract.pytesseract.tesseract_cmd = ruta
+                break
+        else:
+            raise Exception("Tesseract no encontrado en Linux. Instala con: sudo apt install tesseract-ocr")
+    
+    # Configurar TESSDATA_PREFIX para Linux si no está
+    if "TESSDATA_PREFIX" not in os.environ:
+        posibles_tessdata = [
+            "/usr/share/tesseract-ocr/tessdata",
+            "/usr/share/tesseract-ocr/4.00/tessdata",
+            "/usr/share/tesseract-ocr/5/tessdata"
+        ]
+        for ruta in posibles_tessdata:
+            if os.path.isdir(ruta):
+                os.environ["TESSDATA_PREFIX"] = ruta
+                break
+
+# No testeado, should work, AI says
+elif sistema == "Darwin":  # macOS
+    pytesseract.pytesseract.tesseract_cmd = "/usr/local/bin/tesseract"
+    if "TESSDATA_PREFIX" not in os.environ:
+        os.environ["TESSDATA_PREFIX"] = "/usr/local/share/tessdata"
+
+
+
 
 # conexión con la hoja
 gc = gspread.service_account(filename="credentials.json")
@@ -162,7 +214,7 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
             if len(palabras) <= 2:
                 quien = f"{palabras[0]} {palabras[-1]}"
             elif len(palabras)>2:
-                quien = 
+                quien = ""
             else:
                 quien = atributos[3]
             productos_detallados.append({
