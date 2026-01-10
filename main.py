@@ -8,15 +8,11 @@ from PIL import Image
 import requests
 import io
 import os
-import platform
+import sys
 from dotenv import load_dotenv
 import re
 from sheet_utils import create_new_month, append_row
 import gspread
-
-load_dotenv()  # Busca un .env en la carpeta
-# Token del bot de telegram
-TOKEN = os.environ.get("TOKEN")
 
 #TODO ESTO VA PARA VAR DE ENTORNO {
 # no tengo tesseract en el path, de lo contrario comentar esta línea
@@ -34,9 +30,9 @@ TOKEN = os.environ.get("TOKEN")
 
 
 # Detectar el sistema operativo para ubicar tesseract
-sistema = platform.system()
+#istema = platform.system()
 
-if sistema == "Windows":
+if sys.platform.startswith('win'):
     # Configuración para Windows
     pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
     
@@ -45,7 +41,7 @@ if sistema == "Windows":
         if os.path.isdir(possible):
             os.environ["TESSDATA_PREFIX"] = possible
 
-elif sistema == "Linux":
+elif sys.platform.startswith('linux'):
     # Verificar si está instalado
     try:
         pytesseract.get_tesseract_version()
@@ -75,13 +71,15 @@ elif sistema == "Linux":
                 break
 
 # No testeado, should work, AI says
-elif sistema == "Darwin":  # macOS
+elif sys.platform.startswith('darwin'):  # macOS
     pytesseract.pytesseract.tesseract_cmd = "/usr/local/bin/tesseract"
     if "TESSDATA_PREFIX" not in os.environ:
         os.environ["TESSDATA_PREFIX"] = "/usr/local/share/tessdata"
 
 
-
+load_dotenv()  # Busca un .env en la carpeta
+# Token del bot de telegram
+TOKEN = os.environ.get("TOKEN")
 
 # conexión con la hoja
 gc = gspread.service_account(filename="credentials.json")
@@ -94,7 +92,7 @@ hay_error_en_datos = []
 
 # FUNCIONES
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("👋 Mandame una foto de tu ticket para leerla.")
+    await update.message.reply_text("Mandame una foto de tu ticket para leerla.")
 
 async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     photo = update.message.photo[-1]
@@ -207,7 +205,8 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
         if len(atributos) >= 4:
             # Extraer primera y última palabra de atributos[3]
-            palabras = atributos[3].split(".")
+            #palabras = atributos[3].split(".")
+            palabras = re.split(r'\.| a ', atributos[3]) # Sirve separar por puntos así como por a's
             comprador = palabras[0]
             destinatario = palabras[1].split()
             
@@ -232,10 +231,10 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Mensaje de respuesta
     if productos_detallados:
         # Formatear cada producto en una línea separada e indexada
-        mensaje = ""
+        mensaje = "Prod | $ | d/m/a | Comp | Dest/s\n"
         it = 1
         for producto in productos_detallados:
-            mensaje += f"{it}) {producto['nombre']} {producto['precio']} {producto['fecha']} {producto['quien']}\n"
+            mensaje += f"{it}) {producto['nombre']} {"|"} {producto['precio']} {"|"} {producto['fecha']} {"|"} {producto['comprador']} {"|"} {producto['destinatario']}\n"
             it+=1
         if hay_error_en_datos:
             mensaje += f"Faltan datos en las líneas: "
@@ -260,13 +259,13 @@ async def cambiar_mes(update, context):
         try:
             importe = float(context.args[1])
         except ValueError:
-            await update.message.reply_text("❌ El importe debe ser un número válido")
+            await update.message.reply_text("El importe debe ser un número válido")
             return
     else:
         importe = 13000  
     
     create_new_month(mes, importe)
-    await update.message.reply_text(f"📁 Hoja activa: {mes}") # Tal vez luego especifique si se creó o solo se cambió a la existente
+    await update.message.reply_text(f"Hoja activa: {mes}") # Tal vez luego especifique si se creó o solo se cambió a la existente
 
 # handler para /help
 async def ayuda(update, context):
