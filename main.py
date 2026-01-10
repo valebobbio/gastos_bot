@@ -175,10 +175,10 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     texto = update.message.text
     
     if texto.strip().lower() == 'ok':
-        if (productos_en_fila==""): 
+        if (context.user_data["datos_en_fila"]==""): 
             await update.message.reply_text(f"No hay productos para guardar :/ \nEnvíe /help para obtener información")
         try:
-            append_row(productos_en_fila) 
+            append_row(context.user_data["datos_en_fila"]) 
             await update.message.reply_text(f"Productos añadidos con éxito :)") 
         except Exception as e:
             error_message = str(e)
@@ -204,18 +204,24 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         atributos = [attr.strip() for attr in atributos]
         
         if len(atributos) >= 4:
-            # Extraer primera y última palabra de atributos[3]
-            #palabras = atributos[3].split(".")
-            palabras = re.split(r'\.| a ', atributos[3]) # Sirve separar por puntos así como por a's
-            comprador = palabras[0]
-            destinatario = palabras[1].split()
-            
-            if len(palabras) <= 2:
-                quien = f"{palabras[0]} {palabras[-1]}"
-            elif len(palabras)>2:
-                quien = ""
+
+            # Con esto guardo vacío en ambos lugares si es vacío, de lo contrario guardo separado seǵun diga
+            if atributos[3].strip():
+                palabras = re.split(r'\.| a ', atributos[3]) # Sirve separar por puntos así como por a's
+                comprador = palabras[0]
+                destinatario = palabras[1].split()
             else:
-                quien = atributos[3]
+                comprador = ""
+                destinatario = ""
+            
+            # Por el momento no voy a utilizar esto
+            # if len(palabras) <= 2:
+            #     quien = f"{palabras[0]} {palabras[-1]}"
+            # elif len(palabras)>2:
+            #     quien = ""
+            # else:
+            #     quien = atributos[3]
+
             productos_detallados.append({
                 'nombre': atributos[0],
                 'precio': atributos[1],
@@ -226,12 +232,13 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         else:
             hay_error_en_datos.append({nro_linea})
             print(f"Error en los datos del producto {nro_linea}, por favor corrija con /edit")
-        productos_en_fila = productos_detallados
+        #productos_en_fila = productos_detallados esto ya no sirve, voy a usar context user data en lugar de var globales
+        context.user_data["datos_en_fila"] = productos_detallados
 
     # Mensaje de respuesta
     if productos_detallados:
         # Formatear cada producto en una línea separada e indexada
-        mensaje = "Prod | $ | d/m/a | Comp | Dest/s\n"
+        mensaje = "  Prod | $ | d/m/a | Comp | Dest/s\n"
         it = 1
         for producto in productos_detallados:
             mensaje += f"{it}) {producto['nombre']} {"|"} {producto['precio']} {"|"} {producto['fecha']} {"|"} {producto['comprador']} {"|"} {producto['destinatario']}\n"
