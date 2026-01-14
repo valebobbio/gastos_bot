@@ -175,16 +175,17 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     texto = update.message.text
     
     if texto.strip().lower() == 'ok':
-        if (context.user_data["datos_en_fila"]==""): 
+        if (not context.user_data["datos_en_fila"]): 
             await update.message.reply_text(f"No hay productos para guardar :/ \nEnvíe /help para obtener información")
         try:
             append_row(context.user_data["datos_en_fila"]) 
             await update.message.reply_text(f"Productos añadidos con éxito :)") 
+            context.user_data["datos_en_fila"]=""
         except Exception as e:
             error_message = str(e)
             await update.message.reply_text(f"Error al guardar datos :( \n{error_message}")
 
-        await update.message.reply_text(mensaje)
+        #await update.message.reply_text(mensaje)
 
         return
     
@@ -211,8 +212,7 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 comprador = palabras[0]
                 destinatario = palabras[1].split()
             else:
-                comprador = ""
-                destinatario = ""
+                comprador = destinatario = "v"
             
             # Por el momento no voy a utilizar esto
             # if len(palabras) <= 2:

@@ -229,9 +229,9 @@ def append_row(productos_en_filas):
         # Si no encuentra ninguna fila vacía, uso la siguiente a la última
         new_row = len(all_values) + 1
         
-        lineas = productos_en_filas.split("\n") # Tengo que hacer esto más eficiente porque esta recorrida la hago mil veces
+        #lineas = productos_en_filas.split("\n") # Tengo que hacer esto más eficiente porque esta recorrida la hago mil veces
 
-        for linea in lineas:
+        for fila in productos_en_filas:
             # Hago el cálculo del precio
 
             # Lógica de comprador-destinatario:
@@ -240,28 +240,31 @@ def append_row(productos_en_filas):
             # -si no hay ninguno, soy ambos (es decir, no es necesario aclarar cuando compro algo para mí)
             # -si hay ambos, pero ambos son el mismo: si soy yo se ingresa normal, si es otra persona no se hace nada
 
-            comprador = linea['comprador'].lower()
-            destinatario = linea['comprador'].lower()
+            comprador = fila['comprador'].lower()
+            destinatario_s = fila['comprador']
 
-            precio = linea['precio']
+            if len(fila['comprador'])>2:
+                raise Exception(f"No puede haber más de 2 destinatarios. Corrija con /edit")
+
+            precio = fila['precio']
             precio_total = 0
             precio_sofi_yo = 0
 
             # Obtengo los prefijos para poder comparar. En resumen, alcanza con
-            if "sofia".startswith(comprador) and (destinatario=="" or "valentino".startswith(destinatario)):
-                precio_sofi_yo = precio
-            elif "valentino".startswith(comprador) and (destinatario=="" or "sofia".startswith(destinatario)):
-                precio_sofi_yo = -precio
+            # if "sofia".startswith(comprador) and (destinatario=="" or "valentino".startswith(destinatario)):
+            #     precio_sofi_yo = precio
+            # elif "valentino".startswith(comprador) and (destinatario=="" or "sofia".startswith(destinatario)):
+            #     precio_sofi_yo = -precio
             
 
-            #if len(quien.split()==2): 
-            #    if "valentino".startswith(quien[0]) and "sofia".startswith(quien[0]):
+
 
 
             # Agrego producto
-            ws.update_cell(new_row, producto_cell.col, linea['nombre'])
+            ws.update_cell(new_row, producto_cell.col, fila['nombre'])
+
             # Agrego fecha
-            ws.update_cell(new_row, fecha_cell.col, linea['fecha'])
+            ws.update_cell(new_row, fecha_cell.col, fila['fecha'])
             # Hago el cálculo de precio
 
 
