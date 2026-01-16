@@ -86,8 +86,8 @@ gc = gspread.service_account(filename="credentials.json")
 sh = gc.open("Gastos")
 
 # VARIABLES GLOBALES
-productos_en_fila = "" 
-hay_error_en_datos = []
+# productos_en_fila = "" 
+# hay_error_en_datos = []
 
 
 # FUNCIONES
@@ -188,6 +188,8 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         #await update.message.reply_text(mensaje)
 
         return
+    
+    hay_error_en_datos = []
     
     lineas = texto.split('\n')
     

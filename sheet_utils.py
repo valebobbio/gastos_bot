@@ -4,8 +4,12 @@ import gspread
 # Ruta a las credenciales de mi proyecto (APIs de Google)
 gc = gspread.service_account(filename="credentials.json")
 
+from datetime import date
+
 MESES_A_NUMERO = {    'Enero': 1, 'Febrero': 2, 'Marzo': 3, 'Abril': 4, 'Mayo': 5, 'Junio': 6,
     'Julio': 7, 'Agosto': 8, 'Setiembre': 9, 'Octubre': 10, 'Noviembre': 11, 'Diciembre': 12}
+
+NUMERO_A_MES = {v: k for k, v in MESES_A_NUMERO.items()}
 
 COLUMNAS = ["Producto",
             "Tipo",
@@ -27,8 +31,8 @@ COLUMNAS = ["Producto",
 
 # Nombre del archivo en Drive
 sh = gc.open("Gastos")  
-# Valor por defecto
-_active_month = "Octubre"
+# Valor por defecto: mes actual
+_active_month = NUMERO_A_MES.get(date.today().month)
 
 # Por ahora no la uso
 def set_month(month_name):
@@ -62,7 +66,7 @@ def create_new_month(month_name,monto_inicial):
         existing_worksheet = sh.worksheet(month_name)
         # Si existe, cambiar a él
         _active_month = month_name
-        print(f"✅ Cambiado a hoja existente: '{month_name}'")
+        print(f"Cambiado a hoja existente: '{month_name}'")
         return True
     except gspread.exceptions.WorksheetNotFound:
         try:
@@ -196,11 +200,11 @@ def create_new_month(month_name,monto_inicial):
             
             # Configurar como mes activo
             _active_month = month_name
-            print(f"✅ Hoja '{month_name}' creada")
+            print(f"Hoja '{month_name}' creada")
             return True
             
         except Exception as e:
-            print(f"❌ Error creando hoja '{month_name}': {e}")
+            print(f"Error creando hoja '{month_name}': {e}")
             return False
 
 # Recibo los productos en filas formato: nombre precio fecha comp-dest
@@ -241,34 +245,49 @@ def append_row(productos_en_filas):
             # -si hay ambos, pero ambos son el mismo: si soy yo se ingresa normal, si es otra persona no se hace nada
 
             comprador = fila['comprador'].lower()
-            destinatario_s = fila['comprador']
+            destinatario = fila['destinatario']
 
-            if len(fila['comprador'])>2:
-                raise Exception(f"No puede haber más de 2 destinatarios. Corrija con /edit")
 
-            precio = fila['precio']
+            precio = float(fila['precio'])
             precio_total = 0
             precio_sofi_yo = 0
 
-            # Obtengo los prefijos para poder comparar. En resumen, alcanza con
-            # if "sofia".startswith(comprador) and (destinatario=="" or "valentino".startswith(destinatario)):
-            #     precio_sofi_yo = precio
-            # elif "valentino".startswith(comprador) and (destinatario=="" or "sofia".startswith(destinatario)):
-            #     precio_sofi_yo = -precio
-            
+            # Cálculos de precios según destinatario/s
+            if len(destinatario)>2:
+                raise Exception(f"No puede haber más de 2 destinatarios. Corrija con /edit")
+            # Sin manejo para deudas con más personas
+            elif len(destinatario)==2:
+                if "sofia".startswith(comprador):
+                    precio_sofi_yo = precio/2
+                elif "valentino".startswith(comprador) and ("sofia".startswith(destinatario[1]) or "sofia".startswith(destinatario[0])):
+                    precio_sofi_yo = -precio/2 
+                    precio_total = precio
+            else:
+                if "sofia".startswith(comprador) and (not destinatario[0] or "valentino".startswith(destinatario[0].lower())):
+                    precio_sofi_yo = precio
+                elif "valentino".startswith(comprador) and (not destinatario[0] or "sofia".startswith(destinatario[0].lower())):
+                    precio_sofi_yo = -precio
+                    precio_total = precio
 
 
-
+            # Creo nueva fila (NECESARIO??)
+            # ws.append_row(new_row)
 
             # Agrego producto
             ws.update_cell(new_row, producto_cell.col, fila['nombre'])
 
             # Agrego fecha
             ws.update_cell(new_row, fecha_cell.col, fila['fecha'])
-            # Hago el cálculo de precio
 
+            # Agrego precio total
+            ws.update_cell(new_row, precio_cell.col, precio_total)
 
-        ws.append_row(new_row)
+            # Agrego precio compartido
+            ws.update_cell(new_row, comp_dest_cell.col, precio_sofi_yo)
+
+            #
+            new_row+=1
+
         
         return True, "Fila agregada exitosamente"
         
