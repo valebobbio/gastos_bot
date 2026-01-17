@@ -2,11 +2,6 @@
 
 Este proyecto es un bot de Telegram que recibe una foto de un ticket y usa Tesseract (pytesseract) para extraer texto.
 
-¿Para qué sirve este README?
-- Explica cómo preparar el entorno de desarrollo en Windows.
-- Muestra cómo crear y activar un venv, instalar dependencias y seleccionar el intérprete en VS Code.
-- Proporciona instrucciones para instalar y configurar Tesseract (requisito externo) y solucionar errores comunes.
-
 Requisitos
 - Python 3.13 (el proyecto fue probado con 3.13.7 dentro de `.venv`).
 - Tesseract OCR instalado en Windows (opcionalmente en `C:\Program Files\Tesseract-OCR`).
@@ -49,14 +44,5 @@ Para fijarlo permanentemente, añade la variable en las Variables de entorno del
 Solución de problemas comunes
 - Pylance muestra "Import could not be resolved from source": asegúrate de seleccionar el intérprete `.venv` en VS Code y recargar la ventana.
 - Si recibes `TesseractError` por falta de `spa.traineddata`, instala el paquete de idiomas de Tesseract o coloca `spa.traineddata` en `C:\Program Files\Tesseract-OCR\tessdata`.
-
-Siguientes pasos sugeridos
-- Añadir tests mínimos para validar la función de extracción de texto (requiere imágenes de ejemplo).
-- Añadir manejo de errores en el bot (capturar excepciones y responder al usuario con mensajes claros).
-
-Si querés, puedo:
-- Añadir un mensaje de consola más claro cuando falten datos de Tesseract.
-- Agregar tests o plantillas para deploy.
-- Dejar `requirements.txt` con un rango para Pillow en lugar de una versión fija.
 
 ---
