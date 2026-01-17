@@ -46,10 +46,6 @@ $env:TESSDATA_PREFIX = 'C:\Program Files\Tesseract-OCR\tessdata\\'
 ```
 Para fijarlo permanentemente, añade la variable en las Variables de entorno del sistema.
 
-Notas sobre dependencias y compatibilidad
-- Cambié `Pillow==10.0.1` a `Pillow==12.0.0` porque tu entorno usa Python 3.13 y la versión 10 no tenía ruedas (wheels) precompiladas para esa versión; pip intentaba compilar Pillow desde fuente y el proceso fallaba. Pillow 12 tiene ruedas para Python 3.13 en Windows, por eso lo actualicé.
-- Si por alguna razón necesitas exactamente `Pillow==10.0.1`, lo recomendable es usar Python 3.11/3.10 o instalar las herramientas de compilación en Windows (difícil y propenso a errores).
-
 Solución de problemas comunes
 - Pylance muestra "Import could not be resolved from source": asegúrate de seleccionar el intérprete `.venv` en VS Code y recargar la ventana.
 - Si recibes `TesseractError` por falta de `spa.traineddata`, instala el paquete de idiomas de Tesseract o coloca `spa.traineddata` en `C:\Program Files\Tesseract-OCR\tessdata`.
@@ -64,4 +60,3 @@ Si querés, puedo:
 - Dejar `requirements.txt` con un rango para Pillow en lugar de una versión fija.
 
 ---
-Creado automáticamente para ayudarte a configurar y ejecutar el proyecto en Windows.
